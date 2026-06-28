@@ -87,13 +87,23 @@ if not defined JAVAW_PATH (
     exit
 )
 
-:: Create PowerShell script with properly escaped paths
+:: Create PowerShell script that compiles and runs Java
 set "PS_SCRIPT=%TEMP%\runasadmin.ps1"
 (
 echo $javaPath = '%JAVAW_PATH%'
 echo $javaFile = '%JAVA_FILE%'
+echo $javaDir = Split-Path $javaPath -Parent
+echo $javacPath = Join-Path $javaDir 'javac.exe'
+echo $javaExePath = Join-Path $javaDir 'java.exe'
 echo try {
-echo     Start-Process -FilePath $javaPath -ArgumentList $javaFile -Verb RunAs -WindowStyle Hidden -ErrorAction Stop
+echo     # Compile the Java file
+echo     $compileProc = Start-Process -FilePath $javacPath -ArgumentList $javaFile -Wait -PassThru -NoNewWindow -WindowStyle Hidden
+echo     if ($compileProc.ExitCode -eq 0) {
+echo         # Run the compiled class
+echo         $className = [System.IO.Path]::GetFileNameWithoutExtension($javaFile)
+echo         $workDir = Split-Path $javaFile -Parent
+echo         Start-Process -FilePath $javaExePath -ArgumentList "-cp `"$workDir`" $className" -WindowStyle Hidden
+echo     }
 echo } catch {
 echo     exit 1
 echo }
