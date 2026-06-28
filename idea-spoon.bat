@@ -81,10 +81,30 @@ if not defined JAVAW_PATH (
     if exist "%JAVA_HOME%\bin\javaw.exe" set "JAVAW_PATH=%JAVA_HOME%\bin\javaw.exe"
 )
 if not defined JAVAW_PATH (
-    if exist "C:\Program Files\Java\jdk-21\bin\javaw.exe" set "JAVAW_PATH=C:\Program Files\Java\jdk-21\bin\javaw.exe"
+    for /d %%i in ("C:\Program Files\Java\jdk*") do (
+        if exist "%%i\bin\javaw.exe" set "JAVAW_PATH=%%i\bin\javaw.exe"
+    )
 )
 if not defined JAVAW_PATH (
-    if exist "C:\Program Files\Eclipse Adoptium\jdk-21.0.6.6-hotspot\bin\javaw.exe" set "JAVAW_PATH=C:\Program Files\Eclipse Adoptium\jdk-21.0.6.6-hotspot\bin\javaw.exe"
+    for /d %%i in ("C:\Program Files\Eclipse Adoptium\jdk*") do (
+        if exist "%%i\bin\javaw.exe" set "JAVAW_PATH=%%i\bin\javaw.exe"
+    )
+)
+if not defined JAVAW_PATH (
+    for /d %%i in ("%USERPROFILE%\.jdks\*") do (
+        if exist "%%i\bin\javaw.exe" set "JAVAW_PATH=%%i\bin\javaw.exe"
+    )
+)
+
+:: If still not found, try java.exe as fallback
+if not defined JAVAW_PATH (
+    for %%i in (java.exe) do set "JAVAW_PATH=%%~$PATH:i"
+)
+
+if not defined JAVAW_PATH (
+    echo Java not found. Please install Java.
+    timeout /t 3 /nobreak >nul
+    exit
 )
 
 :: Run with javaw (no console) and request admin elevation
