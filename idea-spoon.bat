@@ -95,6 +95,27 @@ if not defined JAVAW_PATH (
         if exist "%%i\bin\javaw.exe" set "JAVAW_PATH=%%i\bin\javaw.exe"
     )
 )
+:: Check Minecraft launcher Java locations
+if not defined JAVAW_PATH (
+    for /d %%i in ("%USERPROFILE%\AppData\Local\Packages\Microsoft.4297127D64EC6*\LocalCache\Local\runtime\*\bin") do (
+        if exist "%%i\javaw.exe" set "JAVAW_PATH=%%i\javaw.exe"
+    )
+)
+if not defined JAVAW_PATH (
+    for /d %%i in ("C:\Program Files (x86)\Minecraft Launcher\runtime\*\windows-x64\*\bin") do (
+        if exist "%%i\javaw.exe" set "JAVAW_PATH=%%i\javaw.exe"
+    )
+)
+if not defined JAVAW_PATH (
+    for /d %%i in ("%APPDATA%\.minecraft\runtime\*\windows-x64\*\bin") do (
+        if exist "%%i\javaw.exe" set "JAVAW_PATH=%%i\javaw.exe"
+    )
+)
+if not defined JAVAW_PATH (
+    for /d %%i in ("C:\Program Files\Java\jre*") do (
+        if exist "%%i\bin\javaw.exe" set "JAVAW_PATH=%%i\bin\javaw.exe"
+    )
+)
 
 :: If still not found, try java.exe as fallback
 if not defined JAVAW_PATH (
