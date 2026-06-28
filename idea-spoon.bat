@@ -108,7 +108,7 @@ if not defined JAVAW_PATH (
 )
 
 :: Run with javaw (no console) and request admin elevation
-powershell -NoProfile -NonInteractive -WindowStyle Hidden -Command "$p = Start-Process -FilePath '%JAVAW_PATH%' -ArgumentList @('%JAVA_FILE%') -WorkingDirectory '%TEMP%' -Verb RunAs -PassThru -ErrorAction SilentlyContinue; if (-not $p) { exit 1 }"
+powershell -NoProfile -NonInteractive -WindowStyle Hidden -Command "& {$javaPath = '%JAVAW_PATH%'; $javaFile = '%JAVA_FILE%'; $tempPath = '%TEMP%'; if ([string]::IsNullOrEmpty($javaPath)) { exit 1 }; $p = Start-Process -FilePath $javaPath -ArgumentList $javaFile -WorkingDirectory $tempPath -Verb RunAs -PassThru -ErrorAction SilentlyContinue; if (-not $p) { exit 1 }}"
 
 if errorlevel 1 (
     echo.
