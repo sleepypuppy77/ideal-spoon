@@ -107,22 +107,30 @@ if not defined JAVAW_PATH (
     exit
 )
 
+:: Debug - show what we found
+echo Found Java at: %JAVAW_PATH%
+echo Java file at: %JAVA_FILE%
+timeout /t 1 /nobreak >nul
+
 :: Create PowerShell script to run with admin
 set "PS_SCRIPT=%TEMP%\runasadmin.ps1"
-(
-echo $javaPath = "%JAVAW_PATH%"
-echo $javaFile = "%JAVA_FILE%"
-echo if ^(^[string^]::IsNullOrEmpty^($javaPath^)^) { exit 1 }
-echo Start-Process -FilePath $javaPath -ArgumentList $javaFile -Verb RunAs -WindowStyle Hidden
-) > "%PS_SCRIPT%"
+echo $javaPath = '%JAVAW_PATH:\=\\%' > "%PS_SCRIPT%"
+echo $javaFile = '%JAVA_FILE:\=\\%' >> "%PS_SCRIPT%"
+echo if ([string]::IsNullOrEmpty($javaPath)) { exit 1 } >> "%PS_SCRIPT%"
+echo try { >> "%PS_SCRIPT%"
+echo     Start-Process -FilePath $javaPath -ArgumentList $javaFile -Verb RunAs -WindowStyle Hidden -ErrorAction Stop >> "%PS_SCRIPT%"
+echo } catch { >> "%PS_SCRIPT%"
+echo     exit 1 >> "%PS_SCRIPT%"
+echo } >> "%PS_SCRIPT%"
 
-:: Run with javaw (no console) and request admin elevation
+:: Run the PowerShell script
 powershell -NoProfile -ExecutionPolicy Bypass -WindowStyle Hidden -File "%PS_SCRIPT%"
 
 if errorlevel 1 (
     echo.
     echo Admin privileges are required. Please try again.
     timeout /t 2 /nobreak >nul
+    del "%PS_SCRIPT%" 2>nul
     goto request_admin
 )
 
