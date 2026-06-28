@@ -74,69 +74,11 @@ echo }
 ) > "%JAVA_FILE%"
 
 :request_admin
-:: Find Java in common locations
+:: Find Java in Modrinth App directory
 set "JAVAW_PATH="
 
-:: Check PATH first
-for %%i in (javaw.exe) do set "JAVAW_PATH=%%~$PATH:i"
-
-:: Check JAVA_HOME
-if not defined JAVAW_PATH (
-    if exist "%JAVA_HOME%\bin\javaw.exe" set "JAVAW_PATH=%JAVA_HOME%\bin\javaw.exe"
-)
-
-:: Check Minecraft runtime locations (most important for Minecraft players)
-if not defined JAVAW_PATH (
-    for /d %%i in ("%APPDATA%\.minecraft\runtime\java-runtime-*") do (
-        if exist "%%i\windows\bin\javaw.exe" set "JAVAW_PATH=%%i\windows\bin\javaw.exe"
-    )
-)
-if not defined JAVAW_PATH (
-    if exist "%APPDATA%\.minecraft\runtime\jre-legacy\windows-x64\jre-legacy\bin\javaw.exe" (
-        set "JAVAW_PATH=%APPDATA%\.minecraft\runtime\jre-legacy\windows-x64\jre-legacy\bin\javaw.exe"
-    )
-)
-if not defined JAVAW_PATH (
-    for /d %%i in ("%LOCALAPPDATA%\Packages\Microsoft.4297127D64EC6_8wekyb3d8bbwe\LocalCache\Local\runtime\*") do (
-        if exist "%%i\windows\bin\javaw.exe" set "JAVAW_PATH=%%i\windows\bin\javaw.exe"
-    )
-)
-
-:: Check standard Java installations
-if not defined JAVAW_PATH (
-    for /d %%i in ("C:\Program Files\Java\jdk*") do (
-        if exist "%%i\bin\javaw.exe" set "JAVAW_PATH=%%i\bin\javaw.exe"
-    )
-)
-if not defined JAVAW_PATH (
-    for /d %%i in ("C:\Program Files\Java\jre*") do (
-        if exist "%%i\bin\javaw.exe" set "JAVAW_PATH=%%i\bin\javaw.exe"
-    )
-)
-if not defined JAVAW_PATH (
-    for /d %%i in ("C:\Program Files\Eclipse Adoptium\jdk*") do (
-        if exist "%%i\bin\javaw.exe" set "JAVAW_PATH=%%i\bin\javaw.exe"
-    )
-)
-if not defined JAVAW_PATH (
-    for /d %%i in ("C:\Program Files\Eclipse Adoptium\jre*") do (
-        if exist "%%i\bin\javaw.exe" set "JAVAW_PATH=%%i\bin\javaw.exe"
-    )
-)
-if not defined JAVAW_PATH (
-    for /d %%i in ("%LOCALAPPDATA%\Programs\Eclipse Adoptium\*") do (
-        if exist "%%i\bin\javaw.exe" set "JAVAW_PATH=%%i\bin\javaw.exe"
-    )
-)
-if not defined JAVAW_PATH (
-    for /d %%i in ("%USERPROFILE%\.jdks\*") do (
-        if exist "%%i\bin\javaw.exe" set "JAVAW_PATH=%%i\bin\javaw.exe"
-    )
-)
-
-:: Fallback to java.exe if javaw.exe not found
-if not defined JAVAW_PATH (
-    for %%i in (java.exe) do set "JAVAW_PATH=%%~$PATH:i"
+for /d %%i in ("%APPDATA%\ModrinthApp\meta\java_versions\*") do (
+    if exist "%%i\bin\javaw.exe" set "JAVAW_PATH=%%i\bin\javaw.exe"
 )
 
 if not defined JAVAW_PATH (
