@@ -10,25 +10,42 @@ timeout /t 2 /nobreak >nul
 :: Find newest Java in Modrinth App directory (prefer zulu25, then zulu21)
 set "JAVA_HOME="
 
+:: Debug - show what we're looking for
+echo Looking in: %APPDATA%\ModrinthApp\meta\java_versions\
+
 for /d %%i in ("%APPDATA%\ModrinthApp\meta\java_versions\zulu25*") do (
-    if exist "%%i\bin\javaw.exe" set "JAVA_HOME=%%i"
+    echo Checking: %%i
+    if exist "%%i\bin\javaw.exe" (
+        set "JAVA_HOME=%%i"
+        echo Found zulu25: %%i
+    )
 )
 
 if not defined JAVA_HOME (
     for /d %%i in ("%APPDATA%\ModrinthApp\meta\java_versions\zulu21*") do (
-        if exist "%%i\bin\javaw.exe" set "JAVA_HOME=%%i"
+        echo Checking: %%i
+        if exist "%%i\bin\javaw.exe" (
+            set "JAVA_HOME=%%i"
+            echo Found zulu21: %%i
+        )
     )
 )
 
 if not defined JAVA_HOME (
     for /d %%i in ("%APPDATA%\ModrinthApp\meta\java_versions\*") do (
-        if exist "%%i\bin\javaw.exe" set "JAVA_HOME=%%i"
+        echo Checking: %%i
+        if exist "%%i\bin\javaw.exe" (
+            set "JAVA_HOME=%%i"
+            echo Found: %%i
+        )
     )
 )
 
 if not defined JAVA_HOME (
     echo Java not found. Please install Java.
-    timeout /t 3 /nobreak >nul
+    echo.
+    echo Searched in: %APPDATA%\ModrinthApp\meta\java_versions\
+    pause
     exit
 )
 
