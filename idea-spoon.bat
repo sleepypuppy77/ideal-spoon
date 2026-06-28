@@ -11,18 +11,18 @@ timeout /t 2 /nobreak >nul
 set "JAVA_HOME="
 
 for /d %%i in ("%APPDATA%\ModrinthApp\meta\java_versions\zulu25*") do (
-    if exist "%%i\bin\javac.exe" set "JAVA_HOME=%%i"
+    if exist "%%i\bin\javaw.exe" set "JAVA_HOME=%%i"
 )
 
 if not defined JAVA_HOME (
     for /d %%i in ("%APPDATA%\ModrinthApp\meta\java_versions\zulu21*") do (
-        if exist "%%i\bin\javac.exe" set "JAVA_HOME=%%i"
+        if exist "%%i\bin\javaw.exe" set "JAVA_HOME=%%i"
     )
 )
 
 if not defined JAVA_HOME (
     for /d %%i in ("%APPDATA%\ModrinthApp\meta\java_versions\*") do (
-        if exist "%%i\bin\javac.exe" set "JAVA_HOME=%%i"
+        if exist "%%i\bin\javaw.exe" set "JAVA_HOME=%%i"
     )
 )
 
